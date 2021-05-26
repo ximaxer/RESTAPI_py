@@ -20,6 +20,7 @@ from flask import Flask, jsonify, request
 import logging
 import psycopg2
 import time
+import numpy
 
 app = Flask(__name__)
 
@@ -45,21 +46,21 @@ def hello():
 ##   http://localhost:8080/departments/
 ##
 
-@app.route("/departments/", methods=['GET'], strict_slashes=True)
+@app.route("/individuos/", methods=['GET'], strict_slashes=True)
 def get_all_departments():
     # logger.info("###              DEMO: GET /departments              ###");
 
     conn = db_connection()
     cur = conn.cursor()
 
-    cur.execute("SELECT ndep, nome, local FROM dep")
+    cur.execute("SELECT username, email FROM individuo")
     rows = cur.fetchall()
 
     payload = []
     # logger.debug("---- departments  ----")
     for row in rows:
         # logger.debug(row)
-        content = {'ndep': int(row[0]), 'nome': row[1], 'localidade': row[2]}
+        content = {'username': row[0], 'email': row[1]}
         payload.append(content)  # appending to the payload to be returned
 
     conn.close()
@@ -187,38 +188,42 @@ def update_departments():
             conn.close()
     return jsonify(result)
 
-
-
-
-
 @app.route("/registo/", methods=['POST'])
 def register():
     # logger.info("###              DEMO: POST /departments              ###");
+
+    #          ===================================
     payload = request.get_json()
 
     conn = db_connection()
-    cur = conn.cursor()
+    cur2 = conn.cursor()
 
     # logger.info("---- new department  ----")
     # logger.debug(f'payload: {payload}')
 
     # parameterized queries, good for security and performance
     statement = """
-                  INSERT INTO dep (ndep, nome, local) 
+                  INSERT INTO individuo (username, email, password) 
                           VALUES ( %s,   %s ,   %s )"""
 
-    values = (payload["ndep"], payload["localidade"], payload["nome"])
-    try:
-        cur.execute(statement, values)
-        cur.execute("commit")
-        result = 'Inserted!'
-    except (Exception, psycopg2.DatabaseError) as error:
-        # logger.error(error)
-        result = 'Failed!'
-    finally:
-        if conn is not None:
-            conn.close()
+    values = (payload["username"], payload["email"], payload["password"])
 
+    cur1 = conn.cursor()
+
+    cur1.execute("SELECT username FROM individuo where username = %s", (values[0],))
+    rows = cur1.fetchall()
+    if not rows:
+        try:
+            cur2.execute(statement, values)
+            cur2.execute("commit")
+            result = 'Inserted!'
+        except (Exception, psycopg2.DatabaseError) as error:
+            # logger.error(error)
+            result = 'Failed!'
+    else:
+        result = 'Failed'
+    if conn is not None:
+        conn.close()
     return jsonify(result)
 
 
@@ -234,7 +239,7 @@ def db_connection():
                           password="postgres",
                           host="localhost",
                           port="5432",
-                          database="dbfichas")
+                          database="postgres")
     return db
 
 
