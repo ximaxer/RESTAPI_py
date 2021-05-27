@@ -77,8 +77,8 @@ def get_all_departments():
 ##   http://localhost:8080/departments/10
 ##
 
-@app.route("/departments/<ndep>", methods=['GET'])
-def get_department(ndep):
+@app.route("/leilao/<leilaoID>", methods=['GET'])
+def get_leilao(leilaoID):
     # logger.info("###              DEMO: GET /departments/<ndep>              ###");
 
     # logger.debug(f'ndep: {ndep}')
@@ -86,14 +86,13 @@ def get_department(ndep):
     conn = db_connection()
     cur = conn.cursor()
 
-    cur.execute("SELECT ndep, nome, local FROM dep where ndep = %s", (ndep,))
+    cur.execute("SELECT leilaoid, individuo_username, titulo, descricao, precominimo,"
+                " artigo_artigoid, artigo_highest_bid, data_inicio, data_fim,"
+                " FROM leilao_artigo where leilaoid = %s", (leilaoID,))
     rows = cur.fetchall()
-
     row = rows[0]
-
-    # logger.debug("---- selected department  ----")
-    # logger.debug(row)
-    content = {'ndep': int(row[0]), 'nome': row[1], 'localidade': row[2]}
+    content = {'leilaoid': int(row[0]), 'titular': row[1], 'titulo': row[2], 'descricao': row[3],
+               'preco minimo': float(row[4]), 'ID artigo': int(row[5]), 'oferta mais alta': float(row[6]), 'data de inicio': row[7], 'data de fim': row[8]}
 
     conn.close()
     return jsonify(content)
@@ -190,26 +189,14 @@ def update_departments():
 
 @app.route("/registo/", methods=['POST'])
 def register():
-    # logger.info("###              DEMO: POST /departments              ###");
-
-    #          ===================================
     payload = request.get_json()
-
     conn = db_connection()
     cur2 = conn.cursor()
 
-    # logger.info("---- new department  ----")
-    # logger.debug(f'payload: {payload}')
-
-    # parameterized queries, good for security and performance
-    statement = """
-                  INSERT INTO individuo (username, email, password) 
-                          VALUES ( %s,   %s ,   %s )"""
-
+    statement = """INSERT INTO individuo (username, email, password) VALUES ( %s,   %s ,   %s )"""
     values = (payload["username"], payload["email"], payload["password"])
 
     cur1 = conn.cursor()
-
     cur1.execute("SELECT username FROM individuo where username = %s", (values[0],))
     rows = cur1.fetchall()
     if not rows:
@@ -235,11 +222,11 @@ def register():
 ##########################################################
 
 def db_connection():
-    db = psycopg2.connect(user="postgres",
-                          password="postgres",
-                          host="localhost",
+    db = psycopg2.connect(user="uzxfbjcsgmeotl",
+                          password="e5406a37ddb46d97450d27f6b8517ef51e9fcad850873d3ce94ffc60a457f64d",
+                          host="ec2-54-155-226-153.eu-west-1.compute.amazonaws.com",
                           port="5432",
-                          database="postgres")
+                          database="degc9kh8m9bu4j")
     return db
 
 
