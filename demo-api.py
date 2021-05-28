@@ -145,6 +145,29 @@ def get_all_notifications():
     conn.close()
     return jsonify(payload)
 
+
+# OBTER LISTA DE VERSOES
+@app.route("/versions/leilaoID", methods=['GET'], strict_slashes=True)
+def get_all_versions(leilaoID):
+    # logger.info("###              DEMO: GET /departments              ###");
+
+    conn = db_connection()
+    cur = conn.cursor()
+
+
+    cur.execute("SELECT data_de_alteracao, precominimo, titulo, descricao, data_inicio, data_inicio, artigo_artigoid  FROM versao where leilao_leilaoid = %s",(leilaoID,))
+    rows = cur.fetchall()
+
+    payload = []
+    # logger.debug("---- departments  ----")
+    for row in rows:
+        # logger.debug(row)
+        content = {'Alterado a': row[0], 'Preco minimo': row[1], 'Titulo': row[2], 'Descricao': row[3], 'Data de inicio': row[4], 'Data de fim': row[5], 'Artigo': row[6]}
+        payload.append(content)  # appending to the payload to be returned
+
+    conn.close()
+    return jsonify(payload)
+
 # OBTER NOTIFICACOES DO UTLIZADOR
 @app.route("/notificacoesUser/", methods=['PUT'], strict_slashes=True)
 def get_user_notifications():
