@@ -96,7 +96,7 @@ def login():
         info[1] = rows[0][1]
         info[2] = rows[0][2]
         key = "secret"
-        encoded = jwt.encode({"exp": (datetime.datetime.utcnow() + datetime.timedelta(seconds=120)), "token" : info},
+        encoded = jwt.encode({"exp": (datetime.datetime.utcnow() + datetime.timedelta(minutes=30)), "token" : info},
                               key, algorithm="HS256")
         if conn is not None:
             conn.close()
@@ -118,6 +118,28 @@ def get_all_departments():
     for row in rows:
         # logger.debug(row)
         content = {'username': row[0], 'email': row[1]}
+        payload.append(content)  # appending to the payload to be returned
+
+    conn.close()
+    return jsonify(payload)
+
+
+# OBTER LISTA DE NOTIFICACOES
+@app.route("/notificacoes/", methods=['GET'], strict_slashes=True)
+def get_all_notifications():
+    # logger.info("###              DEMO: GET /departments              ###");
+
+    conn = db_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT mensagemID, texto, individuo_username  FROM mensagem where privado = True and data_leitura is null")
+    rows = cur.fetchall()
+
+    payload = []
+    # logger.debug("---- departments  ----")
+    for row in rows:
+        # logger.debug(row)
+        content = {'ID': row[0], 'notificacao': row[1], 'user': row[2],}
         payload.append(content)  # appending to the payload to be returned
 
     conn.close()
@@ -171,32 +193,42 @@ def get_all_auctions():
     conn = db_connection()
     cur = conn.cursor()
 
-    cur.execute("SELECT leilaoID, titulo, artigo_artigoid, artigo_highest_bid, individuo_username FROM leilao_artigo")
+    cur.execute("SELECT leilaoid, descricao FROM leilao_artigo")
     rows = cur.fetchall()
 
     payload = []
     # logger.debug("---- departments  ----")
     for row in rows:
         # logger.debug(row)
-        content = {'ID': row[0], 'Titulo': row[1], 'Artigo': row[2], 'Licitacao mais alta': row[3], 'Titular': row[4]}
+        content = {'ID': row[0], 'Descricao': row[1]}
         payload.append(content)  # appending to the payload to be returned
 
     conn.close()
     return jsonify(payload)
 
 # OBTER LEILAO ESPECIFICADO DETALHADO
-@app.route("/leiloes/<leilaoID>", methods=['GET'])
+@app.route("/leilao/<leilaoID>", methods=['GET'])
 def get_auction(leilaoID):
 
     conn = db_connection()
-    cur = conn.cursor()
+    curLeilao = conn.cursor()
+    curMensagem = conn.cursor()
+    curLicitacao = conn.cursor()
 
-    cur.execute("SELECT leilaoID, precominimo, titulo, descricao, data_inicio, data_fim, artigo_artigoid, artigo_highest_bid, individuo_username FROM leilao_artigo where leilaoid = %s", (leilaoID,))
-    rows = cur.fetchall()
-    row = rows[0]
-    content = {'ID': row[0], 'Preco Minimo': row[1], 'Titulo': row[2],
-                   'Descricao': row[3], 'Data de Inicio': row[4], 'Data de Fim': row[5],
-                   'Artigo': row[6], 'Licitacao mais alta': row[7], 'Titular': row[8]}
+    curLeilao.execute("SELECT leilaoID, precominimo, titulo, descricao, data_inicio, data_fim, artigo_artigoid, artigo_highest_bid, individuo_username FROM leilao_artigo where leilaoid = %s", (leilaoID,))
+    curMensagem.execute("SELECT mensagemID, texto, individuo_username FROM mensagem WHERE privado = false and leilao_leilaoid = %s", (leilaoID,))
+    curLicitacao.execute("SELECT licitacaoid, valorlicitado, individuo_username FROM licitacao WHERE leilao_leilaoid = %s", (leilaoID,))
+    rowsLeilao = curLeilao.fetchall()
+    rowsMensagem = curMensagem.fetchall()
+    rowsLicitacao = curLicitacao.fetchall()
+
+    rowLeilao = rowsLeilao[0]
+    content = {'ID': rowLeilao[0], 'Titulo':rowLeilao[2], 'Descricao': rowLeilao[3], 'Data de Inicio': rowLeilao[4], 'Data de Fim': rowLeilao[5],
+                   'Artigo': rowLeilao[6], 'Licitacao mais alta': rowLeilao[7], 'Titular': rowLeilao[8],"Mensagens":[], "Licitacoes":[]}
+    for x in rowsMensagem:
+        content["Mensagens"].append(str(x[0]) + " " + x[1] + " " + x[2]+"\n")
+    for y in rowsLicitacao:
+        content["Licitacoes"].append(str(y[0]) + " " + str(y[1]) + " " + y[2] + "\n")
     conn.close()
     return jsonify(content)
 
@@ -212,7 +244,8 @@ def update_auction(leilaoID):
     decoded = jwt.decode(content["token"], key, algorithms="HS256")
     dados_user = decoded['token']
     cur1 = conn.cursor()
-    cur1.execute("SELECT individuo_username FROM leilao_artigo where individuo_username = %s and leilaoID = %s", (dados_user[0], leilaoID))
+    cur2 = conn.cursor()
+    cur1.execute("SELECT precominimo, titulo, descricao, artigo_artigoid, data_inicio, data_fim, individuo_username FROM leilao_artigo where individuo_username = %s and leilaoid = %s", (dados_user[0], leilaoID))
     rows = cur1.fetchall()
     if not rows:
         return jsonify('Utilizador nao e o titular deste leilao')
@@ -220,6 +253,19 @@ def update_auction(leilaoID):
     if "Preco Minimo" not in content or "Titulo" not in content or "Descricao" not in content or \
             "Artigo" not in content or "Data de Inicio" not in content or "Data de Fim" not in content or "token" not in content:
         return jsonify('all fields are required to update')
+
+
+    dados_leilao = [rows[0][0], rows[0][1], rows[0][2], rows[0][3], (rows[0][4]).strftime("%m-%d-%Y-H-%M-%S"), rows[0][5].strftime("%m-%d-%Y-H-%M-%S")]
+    print(dados_leilao)
+    statement = ("""INSERT INTO versao (data_de_alteracao, precominimo, titulo, descricao, artigo_artigoid, data_inicio, data_fim, leilao_leilaoid)  VALUES ( %s, %s, %s,%s, %s, %s,%s, %s)""")
+    valores = (datetime.datetime.now(), rows[0][0], rows[0][1], rows[0][2], rows[0][3], (rows[0][4]), rows[0][5], leilaoID)
+    try:
+        cur2.execute(statement, valores)
+        cur2.execute("commit")
+    except (Exception, psycopg2.DatabaseError) as error:
+        traceback.print_exc()
+        result = 'Failed to insert version!'
+        return jsonify(result)
 
     dataInicioStr = content["Data de Inicio"].split("-")
     anoI = int(dataInicioStr[0])
@@ -239,10 +285,9 @@ def update_auction(leilaoID):
     statement = """
                 UPDATE leilao_artigo 
                   SET precominimo = %s, titulo = %s, descricao = %s, artigo_artigoid = %s, data_inicio = %s, data_fim = %s
-                WHERE leilaoID = %s"""
+                WHERE leilaoid = %s"""
 
     values = (content["Preco Minimo"], content["Titulo"], content["Descricao"], content["Artigo"], datetime.datetime(anoI,mesI,diaI,horaI,minI,segI), datetime.datetime(anoF,mesF,diaF,horaF,minF,segF), leilaoID)
-    print(content["Preco Minimo"]+" | "+content["Titulo"]+" | "+content["Descricao"]+" | "+content["Artigo"]+" | "+content["Data de Inicio"]+" | "+content["Data de Fim"]+" | "+leilaoID)
     try:
         res = cur.execute(statement, values)
         result = f'Updated: {cur.rowcount}'
@@ -256,7 +301,93 @@ def update_auction(leilaoID):
             conn.close()
     return jsonify(result)
 
+# EFETUAR UMA LICITACAO
 
+@app.route("/licitar/<leilaoID>/<valorLicitacado>", methods=['POST'])
+def bid(leilaoID,valorLicitacado):
+    payload = request.get_json()
+    conn = db_connection()
+    key = "secret"
+    decoded = jwt.decode(payload["token"], key, algorithms="HS256")
+    dados_user = decoded['token']
+    curLeilao = conn.cursor()
+    curLicita = conn.cursor()
+    curNotif = conn.cursor()
+    curAux = conn.cursor()
+    curLeilao.execute("SELECT precominimo, artigo_highest_bid, data_fim, individuo_username FROM leilao_artigo where leilaoid = %s", (leilaoID))
+    rows = curLeilao.fetchall()
+    print(rows)
+    curAux.execute("SELECT valorlicitado from licitacao where licitacaoid = %s", (rows[0][1],))
+    valorMaisAlto = curAux.fetchall()
+    print(valorMaisAlto)
+    if dados_user[0] == rows[0][3]:
+        return jsonify('The owner of an auction cannot bid on his own auction!')
+    if datetime.datetime.now() > rows[0][2]:
+        return jsonify('This auction has expired!')
+    if rows[0][1] is not None:
+        if float(valorLicitacado) > float(valorMaisAlto[0][0]):
+            statement = ("""INSERT INTO licitacao (valorlicitado, individuo_username, leilao_leilaoid)  
+            VALUES ( %s, %s, %s)""")
+            valores = (valorLicitacado, dados_user[0], leilaoID)
+            try:
+                curLicita.execute(statement, valores)
+                curLicita.execute("commit")
+                curLicita.execute("SELECT licitacaoid FROM licitacao WHERE leilao_leilaoid = %s and valorlicitado = %s", (leilaoID, valorLicitacado))
+                rows=curLicita.fetchall()
+                licitacaoID=rows[0][0]
+            except (Exception, psycopg2.DatabaseError) as error:
+                traceback.print_exc()
+                result = 'Failed to insert auction!'
+                if conn is not None:
+                    conn.close()
+                return jsonify(result)
+        else:
+            if conn is not None:
+                conn.close()
+            return jsonify('Your bid is too low!')
+    else:
+        if float(valorLicitacado) > float(rows[0][0]):
+            statement = ("""INSERT INTO licitacao (valorlicitado, individuo_username, leilao_leilaoid)  
+            VALUES ( %s, %s, %s)""")
+            valores = (valorLicitacado, dados_user[0], leilaoID)
+            try:
+                curLicita.execute(statement, valores)
+                curLicita.execute("commit")
+                curLicita.execute("SELECT licitacaoid FROM licitacao WHERE leilao_leilaoid = %s and valorlicitado = %s",(leilaoID, valorLicitacado))
+                rows = curLicita.fetchall()
+                licitacaoID = rows[0][0]
+            except (Exception, psycopg2.DatabaseError) as error:
+                traceback.print_exc()
+                result = 'Failed to insert auction!'
+                if conn is not None:
+                    conn.close()
+                return jsonify(result)
+        else:
+            if conn is not None:
+                conn.close()
+            return jsonify('Your bid is too low!')
+    statement = """UPDATE leilao_artigo SET artigo_highest_bid = %s WHERE leilaoid = %s"""
+    values = (licitacaoID,leilaoID)
+    try:
+        curLeilao.execute(statement, values)
+        curLeilao.execute("commit")
+    except (Exception, psycopg2.DatabaseError) as error:
+        traceback.print_exc()
+        if conn is not None:
+            conn.close()
+        return jsonify('Failed updating auction!')
+    curNotif.execute("SELECT DISTINCT individuo_username FROM licitacao WHERE leilao_leilaoid = %s and valorlicitado < %s", (leilaoID, valorLicitacado))
+    rows = curNotif.fetchall()
+    for x in rows:
+        if x[0] == dados_user[0]:
+            continue
+        statement = ("""INSERT INTO mensagem(texto,privado,leilao_leilaoid,individuo_username)
+        VALUES (%s,%s,%s,%s)""")
+        notificacao = "Licitacao ultrapassada no leilao "+leilaoID+"!"
+        #print(notificacao +" 1 "+ leilaoID +" "+ x[0])
+        values = (notificacao, True, leilaoID, x[0])
+        curNotif.execute(statement, values)
+    return jsonify('success')
 
 
 ##########################################################
