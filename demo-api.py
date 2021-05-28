@@ -21,6 +21,9 @@ import logging
 import psycopg2
 import time
 import numpy
+import jwt
+import datetime
+import traceback
 
 app = Flask(__name__)
 
@@ -46,6 +49,60 @@ def hello():
 ##   http://localhost:8080/departments/
 ##
 
+# REGISTAR NOVO UTILIZADOR
+@app.route("/registo/", methods=['POST'])
+def register():
+    payload = request.get_json()
+    conn = db_connection()
+    cur2 = conn.cursor()
+
+    statement = """INSERT INTO individuo (username, email, password) VALUES ( %s,   %s ,   %s )"""
+    values = (payload["username"], payload["email"], payload["password"])
+
+    cur1 = conn.cursor()
+    cur1.execute("SELECT username FROM individuo where username = %s", (values[0],))
+    rows = cur1.fetchall()
+    if not rows:
+        try:
+            cur2.execute(statement, values)
+            cur2.execute("commit")
+            result = 'Inserted!'
+        except (Exception, psycopg2.DatabaseError) as error:
+            # logger.error(error)
+            traceback.print_exc()
+            result = 'Failed!'
+    else:
+        result = 'Failed'
+    if conn is not None:
+        conn.close()
+    return jsonify(result)
+
+# EFETUAR LOGIN
+@app.route("/login/", methods=['POST'])
+def login():
+    payload = request.get_json()
+    info = ['','','']
+    conn = db_connection()
+    cur1 = conn.cursor()
+    cur1.execute("SELECT username, email, password FROM individuo where username = %s", (payload['username'],))
+    rows = cur1.fetchall()
+    if not rows or rows[0][2] != payload['password']:
+        result = 'Failed!'
+        if conn is not None:
+            conn.close()
+        return jsonify(result)
+    else:
+        info[0] = rows[0][0]
+        info[1] = rows[0][1]
+        info[2] = rows[0][2]
+        key = "secret"
+        encoded = jwt.encode({"exp": (datetime.datetime.utcnow() + datetime.timedelta(seconds=120)), "token" : info},
+                              key, algorithm="HS256")
+        if conn is not None:
+            conn.close()
+        return jsonify(encoded)
+
+# OBTER LISTA DE UTILIZADORES
 @app.route("/individuos/", methods=['GET'], strict_slashes=True)
 def get_all_departments():
     # logger.info("###              DEMO: GET /departments              ###");
@@ -66,153 +123,138 @@ def get_all_departments():
     conn.close()
     return jsonify(payload)
 
-
-##
-##      Demo GET
-##
-## Obtain department with ndep <ndep>
-##
-## To use it, access:
-##
-##   http://localhost:8080/departments/10
-##
-
-@app.route("/leilao/<leilaoID>", methods=['GET'])
-def get_leilao(leilaoID):
-    # logger.info("###              DEMO: GET /departments/<ndep>              ###");
-
-    # logger.debug(f'ndep: {ndep}')
-
-    conn = db_connection()
-    cur = conn.cursor()
-
-    cur.execute("SELECT leilaoid, individuo_username, titulo, descricao, precominimo,"
-                " artigo_artigoid, artigo_highest_bid, data_inicio, data_fim,"
-                " FROM leilao_artigo where leilaoid = %s", (leilaoID,))
-    rows = cur.fetchall()
-    row = rows[0]
-    content = {'leilaoid': int(row[0]), 'titular': row[1], 'titulo': row[2], 'descricao': row[3],
-               'preco minimo': float(row[4]), 'ID artigo': int(row[5]), 'oferta mais alta': float(row[6]), 'data de inicio': row[7], 'data de fim': row[8]}
-
-    conn.close()
-    return jsonify(content)
-
-
-##
-##      Demo POST
-##
-## Add a new department in a JSON payload
-##
-## To use it, you need to use postman or curl:
-##
-##   curl -X POST http://localhost:8080/departments/ -H "Content-Type: application/json" -d '{"localidade": "Polo II", "ndep": 69, "nome": "Seguranca"}'
-##
-
-
-@app.route("/departments/", methods=['POST'])
-def add_departments():
-    # logger.info("###              DEMO: POST /departments              ###");
+# ADICIONAR UM NOVO LEILAO
+@app.route("/addLeilao/", methods=['POST'])
+def add_leilao():
     payload = request.get_json()
-
     conn = db_connection()
     cur = conn.cursor()
+    key = "secret"
+    decoded = jwt.decode(payload["token"], key, algorithms="HS256")
+    dados_user=decoded['token']
+    dataInicioStr = payload["Data de Inicio"].split("-")
+    anoI = int(dataInicioStr[0])
+    mesI = int(dataInicioStr[1])
+    diaI = int(dataInicioStr[2])
+    horaI = int(dataInicioStr[3])
+    minI = int(dataInicioStr[4])
+    segI = int(dataInicioStr[5])
+    dataFimStr = payload["Data de Fim"].split("-")
+    anoF = int(dataFimStr[0])
+    mesF = int(dataFimStr[1])
+    diaF = int(dataFimStr[2])
+    horaF = int(dataFimStr[3])
+    minF = int(dataFimStr[4])
+    segF = int(dataFimStr[5])
 
-    # logger.info("---- new department  ----")
-    # logger.debug(f'payload: {payload}')
+    statement = """INSERT INTO leilao_artigo (precominimo, titulo, descricao, data_inicio, data_fim, individuo_username,artigo_artigoid) VALUES ( %s, %s, %s, %s, %s, %s, %s)"""
+    values = (float(payload["Preco Minimo"]), payload["Titulo"], payload["Descricao"], datetime.datetime(anoI,mesI,diaI,horaI,minI,segI), datetime.datetime(anoF,mesF,diaF,horaF,minF,segF), dados_user[0],payload["Artigo"])
 
-    # parameterized queries, good for security and performance
-    statement = """
-                  INSERT INTO dep (ndep, nome, local) 
-                          VALUES ( %s,   %s ,   %s )"""
-
-    values = (payload["ndep"], payload["localidade"], payload["nome"])
+    print(payload["Preco Minimo"] +" | "+ payload["Titulo"] +" | "+ payload["Descricao"] +" | "+ payload["Artigo"]+" | "+ str(datetime.date(anoI,mesI,diaI)) +" | "+ str(datetime.date(anoF,mesF,diaF)) +" | "+ dados_user[0])
     try:
         cur.execute(statement, values)
         cur.execute("commit")
-        result = 'Inserted!'
+        result = "Inserted"
     except (Exception, psycopg2.DatabaseError) as error:
-        # logger.error(error)
+        traceback.print_exc()
         result = 'Failed!'
     finally:
         if conn is not None:
             conn.close()
-
     return jsonify(result)
 
+# OBTER LISTA DE LEILOES
+@app.route("/leiloes/", methods=['GET'], strict_slashes=True)
+def get_all_auctions():
+    # logger.info("###              DEMO: GET /departments              ###");
 
-##
-##      Demo PUT
-##
-## Update a department based on the a JSON payload
-##
-## To use it, you need to use postman or curl:
-##
-##   curl -X PUT http://localhost:8080/departments/ -H "Content-Type: application/json" -d '{"ndep": 69, "localidade": "Porto"}'
-##
+    conn = db_connection()
+    cur = conn.cursor()
 
-@app.route("/departments/", methods=['PUT'])
-def update_departments():
+    cur.execute("SELECT leilaoID, titulo, artigo_artigoid, artigo_highest_bid, individuo_username FROM leilao_artigo")
+    rows = cur.fetchall()
+
+    payload = []
+    # logger.debug("---- departments  ----")
+    for row in rows:
+        # logger.debug(row)
+        content = {'ID': row[0], 'Titulo': row[1], 'Artigo': row[2], 'Licitacao mais alta': row[3], 'Titular': row[4]}
+        payload.append(content)  # appending to the payload to be returned
+
+    conn.close()
+    return jsonify(payload)
+
+# OBTER LEILAO ESPECIFICADO DETALHADO
+@app.route("/leiloes/<leilaoID>", methods=['GET'])
+def get_auction(leilaoID):
+
+    conn = db_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT leilaoID, precominimo, titulo, descricao, data_inicio, data_fim, artigo_artigoid, artigo_highest_bid, individuo_username FROM leilao_artigo where leilaoid = %s", (leilaoID,))
+    rows = cur.fetchall()
+    row = rows[0]
+    content = {'ID': row[0], 'Preco Minimo': row[1], 'Titulo': row[2],
+                   'Descricao': row[3], 'Data de Inicio': row[4], 'Data de Fim': row[5],
+                   'Artigo': row[6], 'Licitacao mais alta': row[7], 'Titular': row[8]}
+    conn.close()
+    return jsonify(content)
+
+# ATUALIZAR UM LEILAO
+@app.route("/actualizaLeilao/<leilaoID>", methods=['PUT'])
+def update_auction(leilaoID):
     # logger.info("###              DEMO: PUT /departments              ###");
     content = request.get_json()
 
     conn = db_connection()
     cur = conn.cursor()
+    key = "secret"
+    decoded = jwt.decode(content["token"], key, algorithms="HS256")
+    dados_user = decoded['token']
+    cur1 = conn.cursor()
+    cur1.execute("SELECT individuo_username FROM leilao_artigo where individuo_username = %s and leilaoID = %s", (dados_user[0], leilaoID))
+    rows = cur1.fetchall()
+    if not rows:
+        return jsonify('Utilizador nao e o titular deste leilao')
 
-    # if content["ndep"] is None or content["nome"] is None :
-    #    return 'ndep and nome are required to update'
+    if "Preco Minimo" not in content or "Titulo" not in content or "Descricao" not in content or \
+            "Artigo" not in content or "Data de Inicio" not in content or "Data de Fim" not in content or "token" not in content:
+        return jsonify('all fields are required to update')
 
-    if "ndep" not in content or "localidade" not in content:
-        return 'ndep and localidade are required to update'
-
-    # logger.info("---- update department  ----")
-    # logger.info(f'content: {content}')
-
+    dataInicioStr = content["Data de Inicio"].split("-")
+    anoI = int(dataInicioStr[0])
+    mesI = int(dataInicioStr[1])
+    diaI = int(dataInicioStr[2])
+    horaI = int(dataInicioStr[3])
+    minI = int(dataInicioStr[4])
+    segI = int(dataInicioStr[5])
+    dataFimStr = content["Data de Fim"].split("-")
+    anoF = int(dataFimStr[0])
+    mesF = int(dataFimStr[1])
+    diaF = int(dataFimStr[2])
+    horaF = int(dataFimStr[3])
+    minF = int(dataFimStr[4])
+    segF = int(dataFimStr[5])
     # parameterized queries, good for security and performance
     statement = """
-                UPDATE dep 
-                  SET local = %s
-                WHERE ndep = %s"""
+                UPDATE leilao_artigo 
+                  SET precominimo = %s, titulo = %s, descricao = %s, artigo_artigoid = %s, data_inicio = %s, data_fim = %s
+                WHERE leilaoID = %s"""
 
-    values = (content["localidade"], content["ndep"])
-
+    values = (content["Preco Minimo"], content["Titulo"], content["Descricao"], content["Artigo"], datetime.datetime(anoI,mesI,diaI,horaI,minI,segI), datetime.datetime(anoF,mesF,diaF,horaF,minF,segF), leilaoID)
+    print(content["Preco Minimo"]+" | "+content["Titulo"]+" | "+content["Descricao"]+" | "+content["Artigo"]+" | "+content["Data de Inicio"]+" | "+content["Data de Fim"]+" | "+leilaoID)
     try:
         res = cur.execute(statement, values)
         result = f'Updated: {cur.rowcount}'
         cur.execute("commit")
     except (Exception, psycopg2.DatabaseError) as error:
         # logger.error(error)
+        traceback.print_exc()
         result = 'Failed!'
     finally:
         if conn is not None:
             conn.close()
     return jsonify(result)
-
-@app.route("/registo/", methods=['POST'])
-def register():
-    payload = request.get_json()
-    conn = db_connection()
-    cur2 = conn.cursor()
-
-    statement = """INSERT INTO individuo (username, email, password) VALUES ( %s,   %s ,   %s )"""
-    values = (payload["username"], payload["email"], payload["password"])
-
-    cur1 = conn.cursor()
-    cur1.execute("SELECT username FROM individuo where username = %s", (values[0],))
-    rows = cur1.fetchall()
-    if not rows:
-        try:
-            cur2.execute(statement, values)
-            cur2.execute("commit")
-            result = 'Inserted!'
-        except (Exception, psycopg2.DatabaseError) as error:
-            # logger.error(error)
-            result = 'Failed!'
-    else:
-        result = 'Failed'
-    if conn is not None:
-        conn.close()
-    return jsonify(result)
-
 
 
 

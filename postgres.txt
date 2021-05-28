@@ -1,0 +1,59 @@
+drop table leilao_artigo CASCADE;
+drop table licitacao CASCADE;
+drop table individuo CASCADE;
+drop table mensagem CASCADE;
+drop table versao CASCADE;
+
+CREATE TABLE leilao_artigo (
+    leilaoid                SERIAL,
+    precominimo             FLOAT(8),
+    titulo                  VARCHAR(512),
+    descricao               VARCHAR(512),
+    data_inicio             DATE,
+    data_fim                DATE,
+    artigo_artigoid         VARCHAR(512) NOT NULL,
+    artigo_highest_bid      BIGINT,
+    individuo_username      VARCHAR(512) NOT NULL,
+    PRIMARY KEY(leilaoid)
+);
+
+CREATE TABLE individuo (
+    username                VARCHAR(512) NOT NULL,
+    email                   VARCHAR(512),
+    password                VARCHAR(512),
+    PRIMARY KEY(username)
+);
+
+CREATE TABLE licitacao (
+    licitacaoid             SERIAL,
+    valorlicitado           FLOAT(8),
+    individuo_username      VARCHAR(512) NOT NULL,
+    leilao_leilaoid         BIGINT NOT NULL,
+    PRIMARY KEY(licitacaoid)
+);
+
+CREATE TABLE mensagem (
+    mensagemID              SERIAL,
+    texto                   VARCHAR(512),
+    privado                 BOOL DEFAULT FALSE,
+    data_leitura            DATE,
+    leilao_leilaoid         BIGINT NOT NULL,
+    individuo_username      VARCHAR(512) NOT NULL,
+    PRIMARY KEY(mensagemID)
+);
+
+CREATE TABLE versao (
+    versaoid                SERIAL,
+    titulo                  VARCHAR(512),
+    descricao               VARCHAR(512),
+    leilao_leilaoid         BIGINT NOT NULL,
+    PRIMARY KEY(versaoid)
+);
+
+ALTER TABLE leilao_artigo ADD CONSTRAINT leilao_artigo_fk1 FOREIGN KEY (individuo_username) REFERENCES individuo(username);
+ALTER TABLE leilao_artigo ADD CONSTRAINT leilao_artigo_fk2 FOREIGN KEY (artigo_highest_bid) REFERENCES licitacao(licitacaoid);
+ALTER TABLE licitacao ADD CONSTRAINT licitacao_fk1 FOREIGN KEY (individuo_username) REFERENCES individuo(username);
+ALTER TABLE licitacao ADD CONSTRAINT licitacao_fk2 FOREIGN KEY (leilao_leilaoid) REFERENCES leilao_artigo(leilaoid);
+ALTER TABLE mensagem ADD CONSTRAINT mensagem_fk1 FOREIGN KEY (leilao_leilaoid) REFERENCES leilao_artigo(leilaoid);
+ALTER TABLE mensagem ADD CONSTRAINT mensagem_fk2 FOREIGN KEY (individuo_username) REFERENCES individuo(username);
+ALTER TABLE versao ADD CONSTRAINT versao_fk1 FOREIGN KEY (leilao_leilaoid) REFERENCES leilao_artigo(leilaoid);
