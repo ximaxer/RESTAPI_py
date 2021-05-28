@@ -145,6 +145,44 @@ def get_all_notifications():
     conn.close()
     return jsonify(payload)
 
+# OBTER NOTIFICACOES DO UTLIZADOR
+@app.route("/notificacoesUser/", methods=['PUT'], strict_slashes=True)
+def get_user_notifications():
+    content = request.get_json()
+    conn = db_connection()
+    cur = conn.cursor()
+    key = "secret"
+    decoded = jwt.decode(content["token"], key, algorithms="HS256")
+    dados_user = decoded['token']
+
+    cur.execute("SELECT mensagemID, texto  FROM mensagem where privado = True and data_leitura is null and individuo_username = %s", (dados_user[0],))
+    rows = cur.fetchall()
+
+    payload = []
+    for row in rows:
+        content = {'notificacao': row[1]}
+        payload.append(content)  # appending to the payload to be returned
+
+        statement = """
+                    UPDATE mensagem 
+                    SET data_leitura = %s
+                    WHERE mensagemID = %s"""
+
+        values = (datetime.datetime.now(),row[0])
+        try:
+            cur.execute(statement, values)
+            cur.execute("commit")
+        except (Exception, psycopg2.DatabaseError) as error:
+            # logger.error(error)
+            traceback.print_exc()
+            result = 'Failed!'
+            if conn is not None:
+                conn.close()
+            return jsonify(result)
+    if conn is not None:
+        conn.close()
+    return jsonify(payload)
+
 # ADICIONAR UM NOVO LEILAO
 @app.route("/addLeilao/", methods=['POST'])
 def add_leilao():
@@ -206,6 +244,27 @@ def get_all_auctions():
     conn.close()
     return jsonify(payload)
 
+# OBTER LISTA DE LEILOES POR ARTIGO
+@app.route("/leiloes/<artigo>", methods=['GET'], strict_slashes=True)
+def get_auctions_by_item(artigo):
+    # logger.info("###              DEMO: GET /departments              ###");
+
+    conn = db_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT leilaoid, descricao FROM leilao_artigo where artigo_artigoid = %s", (artigo,))
+    rows = cur.fetchall()
+
+    payload = []
+    # logger.debug("---- departments  ----")
+    for row in rows:
+        # logger.debug(row)
+        content = {'ID': row[0], 'Descricao': row[1]}
+        payload.append(content)  # appending to the payload to be returned
+
+    conn.close()
+    return jsonify(payload)
+
 # OBTER LEILAO ESPECIFICADO DETALHADO
 @app.route("/leilao/<leilaoID>", methods=['GET'])
 def get_auction(leilaoID):
@@ -247,7 +306,7 @@ def update_auction(leilaoID):
     cur2 = conn.cursor()
     cur1.execute("SELECT precominimo, titulo, descricao, artigo_artigoid, data_inicio, data_fim, individuo_username FROM leilao_artigo where individuo_username = %s and leilaoid = %s", (dados_user[0], leilaoID))
     rows = cur1.fetchall()
-    if rows[0][5] > datetime.datetime.now():
+    if rows[0][5] < datetime.datetime.now():
         return jsonify('This auction has already finished')
     if not rows:
         return jsonify('Utilizador nao e o titular deste leilao')
@@ -391,6 +450,135 @@ def bid(leilaoID,valorLicitacado):
         curNotif.execute(statement, values)
     return jsonify('success')
 
+
+#Listar	todos	os	leiloes	em	que	o	utilizador	tenha	atividade
+@app.route("/listar/", methods=['GET'])
+def get_auctions():
+    payload = request.get_json()
+    conn = db_connection()
+    cur = conn.cursor()
+    key = "secret"
+    decoded = jwt.decode(payload["token"], key, algorithms="HS256")
+    dados_user = decoded['token']
+
+    cur.execute(
+        "SELECT leilaoid, titulo, descricao, artigo_artigoid  FROM leilao_artigo where individuo_username = %s", (dados_user[0],))
+    rows = cur.fetchall()
+
+    payload = []
+    for row in rows:
+        # logger.debug(row)
+        content = {'leilaoid': row[0], 'titulo': row[1], 'descricao': row[2], 'artigo id': row[3]}
+        payload.append(content)  # appending to the payload to be returned
+
+    cur.execute(
+        "SELECT leilao_leilaoid FROM licitacao where individuo_username = %s",
+        (dados_user[0],))
+    rows = cur.fetchall()
+
+    for row in rows:
+        cur.execute(
+            "SELECT leilaoid, titulo, descricao, artigo_artigoid  FROM leilao_artigo where leilaoid = %s",
+            (row[0],))
+        row2 = cur.fetchall()
+        content = {'leilaoid': row2[0][0], 'titulo': row2[0][1], 'descricao': row2[0][2], 'artigo id': row2[0][3]}
+        payload.append(content)  # appending to the payload to be returned
+    conn.close()
+    return jsonify(payload)
+
+@app.route("/mural/<leilaoID>", methods=['POST'])
+def write_on_mural(leilaoID):
+    payload = request.get_json()
+    conn = db_connection()
+    cur = conn.cursor()
+    key = "secret"
+    decoded = jwt.decode(payload["token"], key, algorithms="HS256")
+    dados_user=decoded['token']
+
+    statement = """INSERT INTO mensagem (texto, leilao_leilaoid, individuo_username) VALUES ( %s, %s, %s)"""
+    values = (payload["Texto"], leilaoID, dados_user[0])
+
+    try:
+        cur.execute(statement, values)
+        cur.execute("commit")
+        result = "Inserted"
+    except (Exception, psycopg2.DatabaseError) as error:
+        traceback.print_exc()
+        result = 'Failed!'
+        if conn is not None:
+            conn.close()
+        return jsonify(result)
+    cur.execute("SELECT DISTINCT individuo_username FROM mensagem WHERE leilao_leilaoid = %s and privado = false", (leilaoID,))
+    listaUsers = cur.fetchall()
+    message = "New message on auction "+leilaoID
+    for individuo in listaUsers:
+        if individuo[0] == dados_user[0]:
+            continue
+        try:
+            statement = """INSERT INTO mensagem (texto, leilao_leilaoid, individuo_username, privado) VALUES ( %s, %s, %s, true)"""
+            values = (message, leilaoID, individuo[0])
+            cur.execute(statement, values)
+            cur.execute("commit")
+        except(Exception, psycopg2.DatabaseError) as error:
+            traceback.print_exc()
+            result = 'Failed!'
+            if conn is not None:
+                conn.close()
+            return jsonify(result)
+    cur.execute("SELECT individuo_username from leilao_artigo where leilaoid = %s",(leilaoID,))
+    owner = cur.fetchall()
+    statement = """INSERT INTO mensagem (texto, leilao_leilaoid, individuo_username, privado) VALUES ( %s, %s, %s, true)"""
+    values = (message, leilaoID, owner[0][0])
+    try:
+        cur.execute(statement, values)
+        cur.execute("commit")
+        result = "Message Posted"
+    except(Exception, psycopg2.DatabaseError) as error:
+        traceback.print_exc()
+        result = 'Failed!'
+        if conn is not None:
+            conn.close()
+        return jsonify(result)
+    if conn is not None:
+        conn.close()
+    return jsonify(result)
+
+@app.route("/fimLeilao/<leilaoID>", methods=['POST'])
+def close_auction(leilaoID):
+    payload = request.get_json()
+    conn = db_connection()
+    cur = conn.cursor()
+    key = "secret"
+    decoded = jwt.decode(payload["token"], key, algorithms="HS256")
+    dados_user=decoded['token']
+
+    cur.execute(
+        "SELECT data_fim, individuo_username, artigo_highest_bid  FROM leilao_artigo where leilaoid = %s", (leilaoID))
+    rows = cur.fetchall()
+    if datetime.datetime.now() < rows[0][0]:
+        return jsonify('This auction is still ongoing!')
+    if dados_user[0] != rows[0][1]:
+        return jsonify('Only the owner of the auction can close it!')
+    cur.execute("SELECT individuo_username, valorlicitado FROM licitacao WHERE licitacaoid = %s", (rows[0][2],))
+    winner = cur.fetchall()
+    cur.execute( "SELECT DISTINCT individuo_username FROM licitacao WHERE leilao_leilaoid = %s", (leilaoID))
+    individuos = cur.fetchall()
+    message = "User " + winner[0][0] + " won the auction with a bid of " + str(winner[0][1])
+    for individuo in individuos:
+        statement = """INSERT INTO mensagem (texto, leilao_leilaoid, individuo_username, privado) VALUES ( %s, %s, %s, true)"""
+        values = (message, leilaoID, individuo[0])
+        try:
+            cur.execute(statement, values)
+            cur.execute("commit")
+        except(Exception, psycopg2.DatabaseError) as error:
+            traceback.print_exc()
+            result = 'Failed!'
+            if conn is not None:
+                conn.close()
+            return jsonify(result)
+    if conn is not None:
+        conn.close()
+    return jsonify('Message sent')
 
 ##########################################################
 ## DATABASE ACCESS

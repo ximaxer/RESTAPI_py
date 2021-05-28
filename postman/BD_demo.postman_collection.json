@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "96bb89be-544c-4057-a183-e6a4da8edf63",
+		"_postman_id": "a17dd7d2-934f-421d-bac4-df225cb997f5",
 		"name": "BD_demo",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -12,7 +12,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"username\": \"joao\", \r\n    \"email\": \"j@gmail.com\", \r\n    \"password\": \"joao1\"\r\n}",
+					"raw": "{\r\n    \"username\": \"lene\", \r\n    \"email\": \"l@gmail.com\", \r\n    \"password\": \"lene1\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -41,7 +41,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"username\": \"taty\", \n    \"password\": \"taty1\"\n}",
+					"raw": "{\n    \"username\": \"joao\", \n    \"password\": \"joao1\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -90,7 +90,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"Preco Minimo\": \"2.20\", \r\n    \"Titulo\": \"titulo exemplo 1\", \r\n    \"Descricao\": \"descricao exemplo 1\", \r\n    \"Artigo\": \"amendoa\",\r\n    \"Data de Inicio\": \"2021-05-26-03-22-30\", \r\n    \"Data de Fim\": \"2021-05-29-23-30-25\", \r\n    \"token\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MjIyMTU1ODEsInRva2VuIjpbInNvZmlhIiwic0BnbWFpbC5jb20iLCJzb2ZpYTEiXX0.EzAD6eYmAaC--rbuNdaoCz6Qlr74nS_EGQbCPVgCfYs\"\r\n}",
+					"raw": "{\r\n    \"Preco Minimo\": \"4.20\", \r\n    \"Titulo\": \"titulo exemplo 4\", \r\n    \"Descricao\": \"descricao exemplo 4\", \r\n    \"Artigo\": \"gamer girl bathing water\",\r\n    \"Data de Inicio\": \"2021-05-26-03-22-30\", \r\n    \"Data de Fim\": \"2021-05-28-18-53-00\", \r\n    \"token\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MjIyMjU3MDUsInRva2VuIjpbImxlbmUiLCJsQGdtYWlsLmNvbSIsImxlbmUxIl19.Iox-BNddvmPXL1A0qBP51qna35xHf8si038M9U0JL4E\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -119,7 +119,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"Preco Minimo\": \"3.90\", \n    \"Titulo\": \"titulo exemplo 1\", \n    \"Descricao\": \"descricao exemplo 1\", \n    \"Artigo\": \"amendoa2\",\n    \"Data de Inicio\": \"2021-05-26-06-22-30\", \n    \"Data de Fim\": \"2021-05-29-23-22-25\", \n    \"token\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MjIyMDAwNzIsInRva2VuIjpbImpvYW8iLCJqQGdtYWlsLmNvbSIsImpvYW8xIl19.3AiDebrfMZlyoucicr00lFsDR1LbRbRRnn6fkQ8KdVc\"\n}",
+					"raw": "{\n    \"Preco Minimo\": \"4.20\", \n    \"Titulo\": \"titulo exemplo 4\", \n    \"Descricao\": \"descricao exemplo 4\", \n    \"Artigo\": \"gamer girl bath water\",\n    \"Data de Inicio\": \"2021-05-26-06-22-30\", \n    \"Data de Fim\": \"2021-05-28-18-53-30\", \n    \"token\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MjIyMjU5MjgsInRva2VuIjpbImxlbmUiLCJsQGdtYWlsLmNvbSIsImxlbmUxIl19.iFpesHS90x2NCOKKeaRIGqBXBe7KkiBHvtJWjl7gEFw\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -127,7 +127,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:8080/actualizaLeilao/1",
+					"raw": "http://localhost:8080/actualizaLeilao/4",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -135,7 +135,7 @@
 					"port": "8080",
 					"path": [
 						"actualizaLeilao",
-						"1"
+						"4"
 					],
 					"query": [
 						{
@@ -209,7 +209,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"token\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MjIyMTU3NDIsInRva2VuIjpbInRhdHkiLCJ0QGdtYWlsLmNvbSIsInRhdHkxIl19.hpkGRJHlvydBMW9GB0g91ecGsITbB5eREsDUZgV7aY4\"\r\n}",
+					"raw": "{\r\n    \"token\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MjIyMjU4ODQsInRva2VuIjpbInRhdHkiLCJqQGdtYWlsLmNvbSIsImpvYW8xIl19.wz9Z5mUWoS0sN9JLijgTZBZxJ3Wa-AgzMpG-nih-jyo\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -217,7 +217,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://localhost:8080/licitar/1/4.22",
+					"raw": "http://localhost:8080/licitar/4/5.23",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -225,8 +225,8 @@
 					"port": "8080",
 					"path": [
 						"licitar",
-						"1",
-						"4.22"
+						"4",
+						"5.23"
 					]
 				}
 			},
@@ -246,6 +246,125 @@
 					"port": "8080",
 					"path": [
 						"notificacoes",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Listar leilões em que o utilizador tenha atividade",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"token\":\"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MjIyMTk5NzcsInRva2VuIjpbInNvZmlhIiwic0BnbWFpbC5jb20iLCJzb2ZpYTEiXX0.-GoK6COcvf-g2Z3xskpcKRAVC105VFCg8S5gOWESKNY\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/listar/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"listar",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Escrever no mural",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"Texto\": \"boobs or vegana\",  \r\n    \"token\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MjIyMjM2NDEsInRva2VuIjpbInRhdHkiLCJqQGdtYWlsLmNvbSIsImpvYW8xIl19.kNr9qykIpKar-Hqs8xJQbg4Pdjp8Ng9Euv6nApRTABw\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/mural/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"mural",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Terminar leilao",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"token\":\"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MjIyMjU5MjgsInRva2VuIjpbImxlbmUiLCJsQGdtYWlsLmNvbSIsImxlbmUxIl19.iFpesHS90x2NCOKKeaRIGqBXBe7KkiBHvtJWjl7gEFw\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/fimLeilao/4",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"fimLeilao",
+						"4"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Ler notifcaçoes privadas",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"token\":\"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MjIyMjcyMTYsInRva2VuIjpbImpvYW8iLCJqQGdtYWlsLmNvbSIsImpvYW8xIl19.vePEAWgXT02feivOwjGxhUsi4yo2ww2WjyIgUCp1JtA\"\r\n    }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/notificacoesUser/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"notificacoesUser",
 						""
 					]
 				}
