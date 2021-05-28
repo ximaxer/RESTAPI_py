@@ -1,24 +1,33 @@
 {
 	"info": {
-		"_postman_id": "6991f472-7acb-45e0-a14e-c47ca0c38685",
+		"_postman_id": "96bb89be-544c-4057-a183-e6a4da8edf63",
 		"name": "BD_demo",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "Obtain All Departments",
+			"name": "Registar novo user",
 			"request": {
-				"method": "GET",
+				"method": "POST",
 				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\": \"andre\", \r\n    \"email\": \"andre@gmail.com\", \r\n    \"password\": \"andre123\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
 				"url": {
-					"raw": "http://localhost:8080/departments/",
+					"raw": "http://localhost:8080/registo/",
 					"protocol": "http",
 					"host": [
 						"localhost"
 					],
 					"port": "8080",
 					"path": [
-						"departments",
+						"registo",
 						""
 					]
 				}
@@ -26,7 +35,121 @@
 			"response": []
 		},
 		{
-			"name": "Obtain One Department",
+			"name": "User Login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"barbara\", \n    \"password\": \"barbara1\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/login/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"login",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Mostrar todos os users",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/individuos/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"individuos",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Adicionar Leilao",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"Preco Minimo\": \"3.60\", \r\n    \"Titulo\": \"titulo exemplo 1\", \r\n    \"Descricao\": \"descricao exemplo 1\", \r\n    \"Artigo\": \"amendoa\",\r\n    \"Data de Inicio\": \"2021-05-26-03-22-30\", \r\n    \"Data de Fim\": \"2021-05-29-23-30-25\", \r\n    \"token\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MjIxNjQ3OTksInRva2VuIjpbInRhdHkiLCJ0QGdtYWlsLmNvbSIsInRhdHkxIl19.rm0fMk2Q46YwXuy_wTCg1V_5lKMAD5SFLcpIyJJX2yE\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/addLeilao/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"addLeilao",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Atualizar Leilao",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"Preco Minimo\": \"3.90\", \n    \"Titulo\": \"titulo exemplo 1\", \n    \"Descricao\": \"descricao exemplo 1\", \n    \"Artigo\": \"amendoa2\",\n    \"Data de Inicio\": \"2021-05-26-30-22-06\", \n    \"Data de Fim\": \"2021-05-29-23-22-25\", \n    \"token\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2MjIxOTk4ODksInRva2VuIjpbImpvYW8iLCJqQGdtYWlsLmNvbSIsImpvYW8xIl19.jp-gcmZJaQoV6svpeQZG70oNEh3bSdTCvdW6T_sxZxc\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/actualizaLeilao/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"actualizaLeilao",
+						"1"
+					],
+					"query": [
+						{
+							"key": "leilaoID",
+							"value": "1",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Consultar detalhes de um leilao",
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -46,60 +169,29 @@
 			"response": []
 		},
 		{
-			"name": "Create New Department",
+			"name": "Listar Leiloes",
 			"request": {
-				"method": "POST",
+				"method": "GET",
 				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"ndep\": 69, \n    \"localidade\": \"Polo II\", \n    \"nome\": \"Informatica\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8080/departments/",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"departments",
-						""
-					]
-				}
+				"url": null
 			},
 			"response": []
 		},
 		{
-			"name": "Update Department",
+			"name": "Licitar",
 			"request": {
-				"method": "PUT",
+				"method": "GET",
 				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"ndep\": 69,\n    \"localidade\": \"Figueira da Foz\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8080/departments/",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"departments",
-						""
-					]
-				}
+				"url": null
+			},
+			"response": []
+		},
+		{
+			"name": "Listar Notificacoes",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": null
 			},
 			"response": []
 		}
