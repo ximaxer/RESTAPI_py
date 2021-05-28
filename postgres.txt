@@ -9,8 +9,8 @@ CREATE TABLE leilao_artigo (
     precominimo             FLOAT(8),
     titulo                  VARCHAR(512),
     descricao               VARCHAR(512),
-    data_inicio             DATE,
-    data_fim                DATE,
+    data_inicio             TIMESTAMP,
+    data_fim                TIMESTAMP,
     artigo_artigoid         VARCHAR(512) NOT NULL,
     artigo_highest_bid      BIGINT,
     individuo_username      VARCHAR(512) NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE mensagem (
     mensagemID              SERIAL,
     texto                   VARCHAR(512),
     privado                 BOOL DEFAULT FALSE,
-    data_leitura            DATE,
+    data_leitura            TIMESTAMP DEFAULT NULL,
     leilao_leilaoid         BIGINT NOT NULL,
     individuo_username      VARCHAR(512) NOT NULL,
     PRIMARY KEY(mensagemID)
@@ -44,8 +44,13 @@ CREATE TABLE mensagem (
 
 CREATE TABLE versao (
     versaoid                SERIAL,
+    data_de_alteracao       TIMESTAMP,
+    precominimo             FLOAT(8),
     titulo                  VARCHAR(512),
     descricao               VARCHAR(512),
+    data_inicio             TIMESTAMP,
+    data_fim                TIMESTAMP,
+    artigo_artigoid         VARCHAR(512) NOT NULL,
     leilao_leilaoid         BIGINT NOT NULL,
     PRIMARY KEY(versaoid)
 );
