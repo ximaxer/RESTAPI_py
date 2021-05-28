@@ -247,6 +247,8 @@ def update_auction(leilaoID):
     cur2 = conn.cursor()
     cur1.execute("SELECT precominimo, titulo, descricao, artigo_artigoid, data_inicio, data_fim, individuo_username FROM leilao_artigo where individuo_username = %s and leilaoid = %s", (dados_user[0], leilaoID))
     rows = cur1.fetchall()
+    if rows[0][5] > datetime.datetime.now():
+        return jsonify('This auction has already finished')
     if not rows:
         return jsonify('Utilizador nao e o titular deste leilao')
 
