@@ -387,37 +387,41 @@ def update_auction(leilaoID):
 
 # EFETUAR UMA LICITACAO
 
-@app.route("/licitar/<leilaoID>/<valorLicitacado>", methods=['POST'])
-def bid(leilaoID,valorLicitacado):
+@app.route("/licitar/<leilaoID>/<valorLicitado>", methods=['POST'])
+def bid(leilaoID,valorLicitado):
     payload = request.get_json()
     conn = db_connection()
     key = "secret"
     decoded = jwt.decode(payload["token"], key, algorithms="HS256")
     dados_user = decoded['token']
-    curLeilao = conn.cursor()
-    curLicita = conn.cursor()
-    curNotif = conn.cursor()
-    curAux = conn.cursor()
-    curLeilao.execute("SELECT precominimo, artigo_highest_bid, data_fim, individuo_username FROM leilao_artigo where leilaoid = %s", (leilaoID))
-    rows = curLeilao.fetchall()
+    cur = conn.cursor()
+    cur.execute("BEGIN;")
+    print(leilaoID)
+    print(valorLicitado)
+    cur.execute(f"SELECT precominimo, artigo_highest_bid, data_fim, individuo_username FROM leilao_artigo where leilaoid = {leilaoID};")
+    rows = cur.fetchall()
     print(rows)
-    curAux.execute("SELECT valorlicitado from licitacao where licitacaoid = %s", (rows[0][1],))
-    valorMaisAlto = curAux.fetchall()
+    if not rows[0][1]:
+        valorMaisAlto=[['','']]
+        valorMaisAlto[0][0] = rows[0][0]
+        valorMaisAlto[0][1] = None
+    else:
+        cur.execute(f"SELECT valorlicitado, individuo_username from licitacao where licitacaoid = {rows[0][1]};")
+        valorMaisAlto = cur.fetchall()
     print(valorMaisAlto)
     if dados_user[0] == rows[0][3]:
         return jsonify('The owner of an auction cannot bid on his own auction!')
     if datetime.datetime.now() > rows[0][2]:
         return jsonify('This auction has expired!')
     if rows[0][1] is not None:
-        if float(valorLicitacado) > float(valorMaisAlto[0][0]):
+        if float(valorLicitado) > float(valorMaisAlto[0][0]):
             statement = ("""INSERT INTO licitacao (valorlicitado, individuo_username, leilao_leilaoid)  
-            VALUES ( %s, %s, %s)""")
-            valores = (valorLicitacado, dados_user[0], leilaoID)
+            VALUES ( %s, %s, %s);""")
+            valores = (valorLicitado, dados_user[0], leilaoID)
             try:
-                curLicita.execute(statement, valores)
-                curLicita.execute("commit")
-                curLicita.execute("SELECT licitacaoid FROM licitacao WHERE leilao_leilaoid = %s and valorlicitado = %s", (leilaoID, valorLicitacado))
-                rows=curLicita.fetchall()
+                cur.execute(statement, valores)
+                cur.execute(f"SELECT licitacaoid, leilao_leilaoid, valorlicitado FROM licitacao WHERE leilao_leilaoid = {leilaoID} and valorlicitado = %s;",(valorLicitado,))
+                rows=cur.fetchall()
                 licitacaoID=rows[0][0]
             except (Exception, psycopg2.DatabaseError) as error:
                 traceback.print_exc()
@@ -430,16 +434,15 @@ def bid(leilaoID,valorLicitacado):
                 conn.close()
             return jsonify('Your bid is too low!')
     else:
-        if float(valorLicitacado) > float(rows[0][0]):
+        if float(valorLicitado) > float(rows[0][0]):
             statement = ("""INSERT INTO licitacao (valorlicitado, individuo_username, leilao_leilaoid)  
-            VALUES ( %s, %s, %s)""")
-            valores = (valorLicitacado, dados_user[0], leilaoID)
+            VALUES ( %s, %s, %s);""")
+            valores = (valorLicitado, dados_user[0], leilaoID)
             try:
-                curLicita.execute(statement, valores)
-                curLicita.execute("commit")
-                curLicita.execute("SELECT licitacaoid FROM licitacao WHERE leilao_leilaoid = %s and valorlicitado = %s",(leilaoID, valorLicitacado))
-                rows = curLicita.fetchall()
-                licitacaoID = rows[0][0]
+                cur.execute(statement, valores)
+                cur.execute(f"SELECT licitacaoid FROM licitacao WHERE leilao_leilaoid = {leilaoID} and valorlicitado = %s;",(valorLicitado,))
+                rows2 = cur.fetchall()
+                licitacaoID = rows2[0][0]
             except (Exception, psycopg2.DatabaseError) as error:
                 traceback.print_exc()
                 result = 'Failed to insert auction!'
@@ -450,27 +453,34 @@ def bid(leilaoID,valorLicitacado):
             if conn is not None:
                 conn.close()
             return jsonify('Your bid is too low!')
-    statement = """UPDATE leilao_artigo SET artigo_highest_bid = %s WHERE leilaoid = %s"""
+    statement = """UPDATE leilao_artigo SET artigo_highest_bid = %s WHERE leilaoid = %s;"""
     values = (licitacaoID,leilaoID)
     try:
-        curLeilao.execute(statement, values)
-        curLeilao.execute("commit")
+        cur.execute(statement, values)
     except (Exception, psycopg2.DatabaseError) as error:
         traceback.print_exc()
         if conn is not None:
             conn.close()
         return jsonify('Failed updating auction!')
-    curNotif.execute("SELECT DISTINCT individuo_username FROM licitacao WHERE leilao_leilaoid = %s and valorlicitado < %s", (leilaoID, valorLicitacado))
-    rows = curNotif.fetchall()
-    for x in rows:
+    cur.execute(f"SELECT DISTINCT individuo_username FROM licitacao WHERE leilao_leilaoid = {leilaoID} and valorlicitado < {valorLicitado};")
+    rows3 = cur.fetchall()
+    for x in rows3:
         if x[0] == dados_user[0]:
             continue
         statement = ("""INSERT INTO mensagem(texto,privado,leilao_leilaoid,individuo_username)
-        VALUES (%s,%s,%s,%s)""")
+        VALUES (%s,%s,%s,%s);""")
         notificacao = "Licitacao ultrapassada no leilao "+leilaoID+"!"
         #print(notificacao +" 1 "+ leilaoID +" "+ x[0])
         values = (notificacao, True, leilaoID, x[0])
-        curNotif.execute(statement, values)
+        cur.execute(statement, values)
+    cur.execute(f"SELECT artigo_highest_bid FROM leilao_artigo where leilaoid = {leilaoID};")
+    rows4 = cur.fetchall()
+    cur.execute(f"SELECT valorlicitado, individuo_username from licitacao where licitacaoid = {rows4[0][0]};")
+    verificaUser = cur.fetchall()
+    if verificaUser[0][1]!=valorMaisAlto[0][1] and verificaUser[0][1]!=dados_user[0]:
+        cur.execute("ROLLBACK;")
+        return jsonify('Another user has placed a higher bid than you!')
+    cur.execute("commit")
     return jsonify('success')
 
 
