@@ -123,6 +123,26 @@ def get_all_departments():
     conn.close()
     return jsonify(payload)
 
+# OBTER LISTA DE VERSOES
+@app.route("/historicoVersoes/<leilaoID>", methods=['GET'], strict_slashes=True)
+def get_auction_version(leilaoID):
+    # logger.info("###              DEMO: GET /departments              ###");
+
+    conn = db_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT versaoid, data_de_alteracao, precominimo, titulo, descricao, data_inicio, data_fim, artigo_artigoid  FROM versao where leilao_leilaoid = %s",(leilaoID,))
+    rows = cur.fetchall()
+
+    payload = []
+    # logger.debug("---- departments  ----")
+    for row in rows:
+        # logger.debug(row)
+        content = {'ID': row[0], 'Data de alteracao': row[1], 'Preco minimo': row[2], 'Titulo' : row[3], 'Descricao': row[4], 'Data de Inicio': row[5], 'Data Final': row[6], 'Artigo' : row[7],}
+        payload.append(content)  # appending to the payload to be returned
+
+    conn.close()
+    return jsonify(payload)
 
 # OBTER LISTA DE NOTIFICACOES
 @app.route("/notificacoes/", methods=['GET'], strict_slashes=True)
